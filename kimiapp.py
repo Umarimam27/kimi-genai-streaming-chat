@@ -96,12 +96,14 @@ st.markdown("""
 st.markdown("""
 <div style="text-align: center;">
     <h1>KimiAI Bot 🤖</h1>
-    <p style="color: gray;">Powered by Groq API</p>
+    <p style="color: gray; position: relative; left: -15px;">
+        Powered by Groq API
+    </p>
 </div>
 """, unsafe_allow_html=True)
 
 # ---------------------------
-# Sidebar UI
+# Sidebar
 # ---------------------------
 with st.sidebar:
     st.title("⚙️ Settings")
@@ -118,9 +120,12 @@ with st.sidebar:
         """
         <div style='margin-top:40px;'>
             <hr>
-            <div style='text-align:center; font-size:14px; color:gray;'>
+            <div style='text-align:center; font-size:20px; color:white; font-weight:600;
+                        # text-shadow: 0px 0px 6px rgba(255,255,255,0.6);'>
                 Made with ❤️ — <b>KimiAI Bot</b><br>
-                Developed by <b>Umar Imam</b>
+                <span style='font-size:18px; font-weight:500;'>
+                    Developed by <b>Umar Imam</b>
+                </span>
             </div>
         </div>
         """,
