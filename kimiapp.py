@@ -72,11 +72,7 @@
 
 import streamlit as st
 from groq import Groq
-import os
-from dotenv import load_dotenv
 from datetime import datetime
-
-load_dotenv()
 
 # ---------------------------
 # Page Config
@@ -87,6 +83,9 @@ st.set_page_config(
     layout="centered"
 )
 
+# ---------------------------
+# Custom Styling
+# ---------------------------
 st.markdown("""
 <style>
 .block-container {
@@ -103,33 +102,44 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------------------------
-# Sidebar (Clear Chat Button)
+# Sidebar
 # ---------------------------
 with st.sidebar:
     st.title("⚙️ Settings")
 
-    # New Chat Button
     if st.button("➕ New Chat"):
         st.session_state.messages = []
         st.rerun()
 
-    # Clear Chat Button
     if st.button("🗑️ Clear Chat"):
         st.session_state.messages = []
         st.rerun()
- # Push footer to bottom
-    st.markdown("<br><br><br><br><br>", unsafe_allow_html=True)
+
+    st.markdown("---")
     st.markdown(
-        "<div style='text-align:center; font-size:18px; color:gray;'>"
-        "Made with ❤️ — KimiAI Bot Developed by UmarImam"
-        "</div>",
+        f"🕒 **Current System Time:**  \n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    )
+
+    st.markdown("<br><br><br>", unsafe_allow_html=True)
+    st.markdown(
+        """
+        <hr>
+        <div style='text-align:center; font-size:14px; color:gray;'>
+        Made with ❤️ — <b>KimiAI Bot</b><br>
+        Developed by <b>Umar Imam</b>
+        </div>
+        """,
         unsafe_allow_html=True
     )
-    
+
 # ---------------------------
-# Groq Client
+# API Key (Production Safe)
 # ---------------------------
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+if "GROQ_API_KEY" not in st.secrets:
+    st.error("API Key not found. Please set GROQ_API_KEY in Streamlit Secrets.")
+    st.stop()
+
+client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
 # ---------------------------
 # Session State
@@ -150,20 +160,16 @@ for msg in st.session_state.messages:
 prompt = st.chat_input("Ask me anything...")
 
 if prompt:
-
-    # Append user message
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Assistant response
     with st.chat_message("assistant"):
         placeholder = st.empty()
         full_response = ""
 
         with st.spinner("Kimi is thinking..."):
-
             stream = client.chat.completions.create(
                 model="moonshotai/kimi-k2-instruct-0905",
                 messages=st.session_state.messages,
@@ -182,7 +188,6 @@ if prompt:
                     full_response += token
                     placeholder.markdown(full_response)
 
-        # Handle empty response
         if full_response.strip() == "":
             full_response = "No response from the model."
 
