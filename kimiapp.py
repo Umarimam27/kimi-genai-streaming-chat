@@ -1,4 +1,4 @@
-# # HEAD
+# # # HEAD
 # import streamlit as st
 # from groq import Groq
 # import os
@@ -72,7 +72,6 @@
 
 import streamlit as st
 from groq import Groq
-from datetime import datetime
 
 # ---------------------------
 # Page Config
@@ -102,7 +101,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------------------------
-# Sidebar
+# Sidebar UI
 # ---------------------------
 with st.sidebar:
     st.title("⚙️ Settings")
@@ -115,18 +114,14 @@ with st.sidebar:
         st.session_state.messages = []
         st.rerun()
 
-    st.markdown("---")
-    st.markdown(
-        f"🕒 **Current System Time:**  \n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-    )
-
-    st.markdown("<br><br><br>", unsafe_allow_html=True)
     st.markdown(
         """
-        <hr>
-        <div style='text-align:center; font-size:14px; color:gray;'>
-        Made with ❤️ — <b>KimiAI Bot</b><br>
-        Developed by <b>Umar Imam</b>
+        <div style='margin-top:40px;'>
+            <hr>
+            <div style='text-align:center; font-size:14px; color:gray;'>
+                Made with ❤️ — <b>KimiAI Bot</b><br>
+                Developed by <b>Umar Imam</b>
+            </div>
         </div>
         """,
         unsafe_allow_html=True
@@ -142,7 +137,7 @@ if "GROQ_API_KEY" not in st.secrets:
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
 # ---------------------------
-# Session State
+# Session Memory
 # ---------------------------
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -160,37 +155,35 @@ for msg in st.session_state.messages:
 prompt = st.chat_input("Ask me anything...")
 
 if prompt:
+    # Store user message
     st.session_state.messages.append({"role": "user", "content": prompt})
 
+    # Immediately show user message
     with st.chat_message("user"):
         st.markdown(prompt)
 
+    full_response = ""
+
+    stream = client.chat.completions.create(
+        model="moonshotai/kimi-k2-instruct-0905",
+        messages=st.session_state.messages,
+        max_completion_tokens=2048,
+        temperature=0.7,
+        stream=True
+    )
+
     with st.chat_message("assistant"):
         placeholder = st.empty()
-        full_response = ""
 
-        with st.spinner("Kimi is thinking..."):
-            stream = client.chat.completions.create(
-                model="moonshotai/kimi-k2-instruct-0905",
-                messages=st.session_state.messages,
-                max_completion_tokens=2048,
-                temperature=0.7,
-                stream=True
-            )
+        for chunk in stream:
+            if chunk.choices and chunk.choices[0].delta.content:
+                token = chunk.choices[0].delta.content
+                full_response += token
+                placeholder.markdown(full_response)
 
-            for chunk in stream:
-                if (
-                    chunk.choices
-                    and chunk.choices[0].delta
-                    and chunk.choices[0].delta.content
-                ):
-                    token = chunk.choices[0].delta.content
-                    full_response += token
-                    placeholder.markdown(full_response)
+    if full_response.strip() == "":
+        full_response = "No response from the model"
 
-        if full_response.strip() == "":
-            full_response = "No response from the model."
-
-        st.session_state.messages.append(
-            {"role": "assistant", "content": full_response}
-        )
+    st.session_state.messages.append(
+        {"role": "assistant", "content": full_response}
+    )
